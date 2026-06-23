@@ -46,12 +46,12 @@ const App = () => {
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<DashboardOverview />} />
+                <Route path="resumes" element={<ResumesPage />} />
+                <Route path="resumes/new" element={<ResumesPage />} />
                 <Route path="resumes/:id" element={<ResumeEditor />} />
                 <Route path="account" element={<AccountPage />} />
-                {/* Uncomment as you build each page */}
-                <Route path="resumes" element={<ResumesPage />} />
                 <Route path="generate" element={<GeneratePage />} />
-                <Route path="templates" element={<TemplatesPage />} />
+                <Route path="templates" element={<TemplatesPage />} />  
               </Route>
             </Route>
           </Routes>

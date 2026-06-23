@@ -13,7 +13,7 @@ const getGreeting = () => {
 
 const QUICK_ACTIONS = [
   { icon: "fa-wand-magic-sparkles", label: "Generate with AI", desc: "Let AI build your resume", path: "/dashboard/generate" },
-  { icon: "fa-file-circle-plus", label: "New resume", desc: "Start from scratch", path: "/dashboard/resumes/new" },
+  { icon: "fa-file-circle-plus", label: "New resume", desc: "Start from scratch", path: "/dashboard/resumes" },
   { icon: "fa-swatchbook", label: "Browse templates", desc: "Pick a professional layout", path: "/dashboard/templates" },
 ];
 
