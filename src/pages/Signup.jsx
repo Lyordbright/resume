@@ -1,41 +1,37 @@
-import React, { useContext, useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { Link, useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faEyeSlash, faSpinner, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { authContext } from "../contexts/AuthContexts";
 import { toast } from "sonner";
 
 const baseUrl = import.meta.env.VITE_BASE_URL;
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-const signUpSchema = yup.object({
-  firstName: yup.string().required("First name is required"),
-  lastName: yup.string().required("Last name is required"),
-  email: yup.string().email("Enter a valid email").required("Email is required"),
-  password: yup.string().required("Password is required").min(6, "At least 6 characters"),
-  confirmPassword: yup.string().oneOf([yup.ref("password")], "Passwords must match").required("Please confirm your password"),
+const schema = yup.object({
+  firstName: yup.string().required("Required"),
+  lastName: yup.string().required("Required"),
+  email: yup.string().email("Invalid email").required("Required"),
+  password: yup.string().min(6, "Min 6 characters").required("Required"),
+  confirmPassword: yup.string().oneOf([yup.ref("password")], "Passwords don't match").required("Required"),
 });
 
-const SignupPage = () => {
+export default function SignupPage() {
+  const { signup, signingUp, setUser } = useContext(authContext);
+  const navigate = useNavigate();
+  const googleRef = useRef(null);
+  const [show, setShow] = useState({ password: false, confirm: false });
+  const [active, setActive] = useState(null);
+
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
-    resolver: yupResolver(signUpSchema),
+    resolver: yupResolver(schema),
     defaultValues: { firstName: "", lastName: "", email: "", password: "", confirmPassword: "" },
   });
-  const { signup, signingUp, setUser } = useContext(authContext);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const navigate = useNavigate();
-  const googleBtnRef = useRef(null);
 
   const onSubmit = async (data) => { await signup(data); reset(); };
 
-  const handleGoogleResponse = async (response) => {
-    setGoogleLoading(true);
+  const handleGoogle = async (response) => {
     try {
       const res = await fetch(`${baseUrl}/auth/google`, {
         method: "POST",
@@ -46,212 +42,204 @@ const SignupPage = () => {
       if (!res.ok) { toast.error(data.message || "Google sign up failed"); return; }
       localStorage.setItem("token", data.token);
       setUser(data.user);
-      toast.success("Account created! Redirecting…");
+      toast.success("Welcome! Redirecting…");
       navigate("/dashboard");
-    } catch {
-      toast.error("Google sign up failed. Please try again.");
-    } finally {
-      setGoogleLoading(false);
-    }
+    } catch { toast.error("Google sign up failed."); }
   };
 
   const initGoogle = () => {
-    if (!window.google || !GOOGLE_CLIENT_ID || !googleBtnRef.current) return;
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleResponse,
-    });
-    window.google.accounts.id.renderButton(googleBtnRef.current, {
-      theme: "outline", size: "large", width: googleBtnRef.current.offsetWidth || 360, text: "signup_with",
+    if (!window.google || !GOOGLE_CLIENT_ID || !googleRef.current) return;
+    window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogle });
+    window.google.accounts.id.renderButton(googleRef.current, {
+      theme: "outline", size: "large", width: googleRef.current.offsetWidth || 380, text: "signup_with",
     });
   };
 
   useEffect(() => {
-    // Wait for GSI script to load
-    if (window.google) {
-      initGoogle();
-    } else {
-      const interval = setInterval(() => {
-        if (window.google) { clearInterval(interval); initGoogle(); }
-      }, 200);
-      return () => clearInterval(interval);
-    }
+    if (window.google) { initGoogle(); return; }
+    const t = setInterval(() => { if (window.google) { clearInterval(t); initGoogle(); } }, 200);
+    return () => clearInterval(t);
   }, []);
 
-  return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #fff 100%)",
-      fontFamily: "Inter, system-ui, sans-serif",
-      display: "flex", flexDirection: "column"
-    }}>
-      {/* Nav */}
-      <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 2rem" }}>
-        <Link to="/" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: "#64748b", textDecoration: "none" }}>
-          <FontAwesomeIcon icon={faArrowLeft} /> Back
-        </Link>
-        <Link to="/" style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb", textDecoration: "none", letterSpacing: "-0.01em" }}>
-          ProFile ElevateAI
-        </Link>
-      </nav>
+  const field = (id, label, type, reg, err) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+      <label style={{ fontSize: 12, fontWeight: 600, color: active === id ? "#2563eb" : err ? "#ef4444" : "#64748b", letterSpacing: "0.03em", textTransform: "uppercase" }}>
+        {label}
+      </label>
+      <input
+        type={type} {...reg}
+        onFocus={() => setActive(id)} onBlur={() => setActive(null)}
+        style={{
+          padding: "12px 14px", fontSize: 14, borderRadius: 10, outline: "none", width: "100%",
+          border: `2px solid ${err ? "#fca5a5" : active === id ? "#2563eb" : "#f1f5f9"}`,
+          background: err ? "#fff5f5" : active === id ? "#f8faff" : "#f8fafc",
+          color: "#0f172a", transition: "all 0.15s",
+          boxShadow: active === id ? "0 0 0 4px rgba(37,99,235,0.08)" : "none",
+        }}
+      />
+      {err && <span style={{ fontSize: 11, color: "#ef4444" }}>{err.message}</span>}
+    </div>
+  );
 
-      {/* Card */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem 1.25rem 3rem" }}>
-        <div style={{
-          width: "100%", maxWidth: "460px",
-          background: "#fff", border: "1px solid #e2e8f0",
-          borderRadius: "20px", padding: "2.25rem 2rem",
-          boxShadow: "0 8px 40px rgba(37,99,235,0.10)"
-        }}>
-          {/* Header */}
-          <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
-            <div style={{
-              width: "48px", height: "48px", borderRadius: "14px",
-              background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 1rem", boxShadow: "0 4px 12px rgba(37,99,235,0.3)"
-            }}>
-              <i className="fa-solid fa-file-lines" style={{ color: "#fff", fontSize: "20px" }}></i>
+  return (
+    <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", fontFamily: "Inter, system-ui, sans-serif" }}>
+
+      {/* Left panel */}
+      <div style={{
+        width: "42%", background: "linear-gradient(160deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%)",
+        display: "flex", flexDirection: "column", justifyContent: "space-between",
+        padding: "2.5rem", position: "relative", overflow: "hidden"
+      }} className="signup-left-panel">
+        {/* Background circles */}
+        <div style={{ position: "absolute", width: 320, height: 320, borderRadius: "50%", background: "rgba(255,255,255,0.05)", top: -80, right: -80 }} />
+        <div style={{ position: "absolute", width: 220, height: 220, borderRadius: "50%", background: "rgba(255,255,255,0.07)", bottom: 60, left: -60 }} />
+
+        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", zIndex: 1 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "center"
+          }}>
+            <i className="fa-solid fa-file-lines" style={{ color: "#fff", fontSize: 16 }}></i>
+          </div>
+          <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>ProFile ElevateAI</span>
+        </Link>
+
+        <div style={{ zIndex: 1 }}>
+          <h2 style={{ color: "#fff", fontSize: "clamp(22px, 3vw, 30px)", fontWeight: 800, margin: "0 0 1rem", lineHeight: 1.25 }}>
+            Build a resume that gets you hired
+          </h2>
+          <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 1.7, margin: "0 0 2rem" }}>
+            Join thousands of job seekers who use AI to craft professional, ATS-optimized resumes in minutes.
+          </p>
+          {[
+            { icon: "fa-wand-magic-sparkles", text: "AI-powered resume generation" },
+            { icon: "fa-file-shield", text: "ATS-optimized formatting" },
+            { icon: "fa-download", text: "Export to PDF instantly" },
+          ].map((item) => (
+            <div key={item.text} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.15)",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+              }}>
+                <i className={`fa-solid ${item.icon}`} style={{ color: "#fff", fontSize: 13 }}></i>
+              </div>
+              <span style={{ color: "rgba(255,255,255,0.9)", fontSize: 13.5 }}>{item.text}</span>
             </div>
-            <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>
-              Create your account
-            </h1>
-            <p style={{ fontSize: "14px", color: "#64748b", margin: 0 }}>
-              Start building a resume that gets noticed
-            </p>
+          ))}
+        </div>
+
+        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, zIndex: 1, margin: 0 }}>
+          © 2025 ProFile ElevateAI
+        </p>
+      </div>
+
+      {/* Right panel */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1.5rem", overflowY: "auto" }}>
+        <div style={{ width: "100%", maxWidth: 420 }}>
+
+          <div style={{ marginBottom: "2rem" }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", margin: "0 0 6px" }}>Create your account</h1>
+            <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>Free forever. No credit card required.</p>
           </div>
 
-          {/* Google button */}
+          {/* Google */}
           {GOOGLE_CLIENT_ID && (
             <>
-              <div
-                ref={googleBtnRef}
-                style={{ width: "100%", marginBottom: "1.25rem", minHeight: "44px", display: "flex", justifyContent: "center" }}
-              ></div>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "1.25rem" }}>
-                <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-                <span style={{ fontSize: "12px", color: "#94a3b8", whiteSpace: "nowrap" }}>or sign up with email</span>
-                <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
+              <div ref={googleRef} style={{ width: "100%", minHeight: 44, marginBottom: "1.25rem", display: "flex", justifyContent: "center" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: "1.25rem" }}>
+                <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
+                <span style={{ fontSize: 12, color: "#94a3b8" }}>or with email</span>
+                <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
               </div>
             </>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
-            {/* First + Last name */}
-            <div style={{ display: "flex", gap: "10px" }}>
-              <FloatField
-                label="First name" id="firstName" type="text"
-                register={register("firstName")} error={errors.firstName}
-                focused={focusedField === "firstName"} setFocused={setFocusedField}
-              />
-              <FloatField
-                label="Last name" id="lastName" type="text"
-                register={register("lastName")} error={errors.lastName}
-                focused={focusedField === "lastName"} setFocused={setFocusedField}
-              />
+          <form onSubmit={handleSubmit(onSubmit)} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "flex", gap: "12px" }}>
+              {field("firstName", "First name", "text", register("firstName"), errors.firstName)}
+              {field("lastName", "Last name", "text", register("lastName"), errors.lastName)}
             </div>
-
-            {/* Email */}
-            <FloatField
-              label="Email address" id="email" type="email"
-              register={register("email")} error={errors.email}
-              focused={focusedField === "email"} setFocused={setFocusedField}
-            />
+            {field("email", "Email address", "email", register("email"), errors.email)}
 
             {/* Password */}
-            <FloatField
-              label="Password" id="password"
-              type={showPassword ? "text" : "password"}
-              register={register("password")} error={errors.password}
-              focused={focusedField === "password"} setFocused={setFocusedField}
-              rightIcon={
-                <span onClick={() => setShowPassword(p => !p)} style={eyeStyle}>
-                  <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: active === "password" ? "#2563eb" : errors.password ? "#ef4444" : "#64748b", letterSpacing: "0.03em", textTransform: "uppercase" }}>
+                Password
+              </label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={show.password ? "text" : "password"}
+                  {...register("password")}
+                  onFocus={() => setActive("password")} onBlur={() => setActive(null)}
+                  style={{
+                    width: "100%", padding: "12px 44px 12px 14px", fontSize: 14, borderRadius: 10, outline: "none",
+                    border: `2px solid ${errors.password ? "#fca5a5" : active === "password" ? "#2563eb" : "#f1f5f9"}`,
+                    background: errors.password ? "#fff5f5" : active === "password" ? "#f8faff" : "#f8fafc",
+                    color: "#0f172a", transition: "all 0.15s",
+                    boxShadow: active === "password" ? "0 0 0 4px rgba(37,99,235,0.08)" : "none",
+                  }}
+                />
+                <span onClick={() => setShow(s => ({ ...s, password: !s.password }))} style={eye}>
+                  <i className={`fa-solid ${show.password ? "fa-eye" : "fa-eye-slash"}`}></i>
                 </span>
-              }
-            />
+              </div>
+              {errors.password && <span style={{ fontSize: 11, color: "#ef4444" }}>{errors.password.message}</span>}
+            </div>
 
             {/* Confirm password */}
-            <FloatField
-              label="Confirm password" id="confirmPassword"
-              type={showConfirm ? "text" : "password"}
-              register={register("confirmPassword")} error={errors.confirmPassword}
-              focused={focusedField === "confirmPassword"} setFocused={setFocusedField}
-              rightIcon={
-                <span onClick={() => setShowConfirm(p => !p)} style={eyeStyle}>
-                  <FontAwesomeIcon icon={showConfirm ? faEye : faEyeSlash} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: active === "confirm" ? "#2563eb" : errors.confirmPassword ? "#ef4444" : "#64748b", letterSpacing: "0.03em", textTransform: "uppercase" }}>
+                Confirm password
+              </label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={show.confirm ? "text" : "password"}
+                  {...register("confirmPassword")}
+                  onFocus={() => setActive("confirm")} onBlur={() => setActive(null)}
+                  style={{
+                    width: "100%", padding: "12px 44px 12px 14px", fontSize: 14, borderRadius: 10, outline: "none",
+                    border: `2px solid ${errors.confirmPassword ? "#fca5a5" : active === "confirm" ? "#2563eb" : "#f1f5f9"}`,
+                    background: errors.confirmPassword ? "#fff5f5" : active === "confirm" ? "#f8faff" : "#f8fafc",
+                    color: "#0f172a", transition: "all 0.15s",
+                    boxShadow: active === "confirm" ? "0 0 0 4px rgba(37,99,235,0.08)" : "none",
+                  }}
+                />
+                <span onClick={() => setShow(s => ({ ...s, confirm: !s.confirm }))} style={eye}>
+                  <i className={`fa-solid ${show.confirm ? "fa-eye" : "fa-eye-slash"}`}></i>
                 </span>
-              }
-            />
+              </div>
+              {errors.confirmPassword && <span style={{ fontSize: 11, color: "#ef4444" }}>{errors.confirmPassword.message}</span>}
+            </div>
 
-            {/* Submit */}
-            <button
-              type="submit" disabled={signingUp}
-              style={{
-                width: "100%", marginTop: "0.25rem",
-                background: signingUp ? "#93c5fd" : "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                color: "#fff", border: "none", borderRadius: "10px",
-                padding: "13px", fontSize: "15px", fontWeight: 600,
-                cursor: signingUp ? "not-allowed" : "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                boxShadow: signingUp ? "none" : "0 4px 12px rgba(37,99,235,0.3)",
-                transition: "all 0.15s"
-              }}
-            >
-              {signingUp
-                ? <><FontAwesomeIcon icon={faSpinner} spin /> Creating account…</>
-                : "Create account"}
+            <button type="submit" disabled={signingUp} style={{
+              width: "100%", padding: "13px", marginTop: 4,
+              background: signingUp ? "#93c5fd" : "linear-gradient(135deg, #2563eb, #1d4ed8)",
+              color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700,
+              cursor: signingUp ? "not-allowed" : "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              boxShadow: signingUp ? "none" : "0 4px 14px rgba(37,99,235,0.35)",
+            }}>
+              {signingUp ? <><i className="fa-solid fa-spinner fa-spin"></i> Creating…</> : "Create account →"}
             </button>
           </form>
 
-          <p style={{ textAlign: "center", fontSize: "14px", color: "#64748b", marginTop: "1.5rem" }}>
+          <p style={{ textAlign: "center", fontSize: 14, color: "#64748b", marginTop: "1.75rem" }}>
             Already have an account?{" "}
-            <Link to="/login" style={{ color: "#2563eb", fontWeight: 600, textDecoration: "none" }}>Sign in</Link>
+            <Link to="/login" style={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>Sign in</Link>
           </p>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 640px) {
+          .signup-left-panel { display: none !important; }
+        }
+      `}</style>
     </div>
   );
-};
+}
 
-// ── Floating label input field ──────────────────────────────────────
-const FloatField = ({ label, id, type, register, error, focused, setFocused, rightIcon }) => {
-  return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "5px" }}>
-      <label style={{
-        fontSize: "12.5px", fontWeight: 500,
-        color: focused ? "#2563eb" : error ? "#dc2626" : "#374151",
-        transition: "color 0.15s"
-      }}>
-        {label}
-      </label>
-      <div style={{ position: "relative" }}>
-        <input
-          type={type}
-          {...register}
-          onFocus={() => setFocused(id)}
-          onBlur={() => setFocused(null)}
-          style={{
-            width: "100%", padding: rightIcon ? "11px 42px 11px 14px" : "11px 14px",
-            fontSize: "14px",
-            border: `1.5px solid ${error ? "#fca5a5" : focused ? "#2563eb" : "#e2e8f0"}`,
-            borderRadius: "10px", outline: "none",
-            color: "#1e293b", background: error ? "#fff5f5" : focused ? "#f8faff" : "#fff",
-            transition: "all 0.15s",
-            boxShadow: focused ? "0 0 0 3px rgba(37,99,235,0.1)" : "none",
-          }}
-        />
-        {rightIcon}
-      </div>
-      {error && <p style={{ color: "#dc2626", fontSize: "11.5px", margin: 0 }}>{error.message}</p>}
-    </div>
-  );
+const eye = {
+  position: "absolute", right: 13, top: "50%",
+  transform: "translateY(-50%)", cursor: "pointer", color: "#94a3b8", fontSize: 15
 };
-
-const eyeStyle = {
-  position: "absolute", right: "13px", top: "50%",
-  transform: "translateY(-50%)", cursor: "pointer",
-  color: "#94a3b8", fontSize: "15px"
-};
-
-export default SignupPage;
