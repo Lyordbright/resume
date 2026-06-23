@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -15,7 +15,7 @@ const signUpSchema = yup.object({
   firstName: yup.string().required("First name is required"),
   lastName: yup.string().required("Last name is required"),
   email: yup.string().email("Enter a valid email").required("Email is required"),
-  password: yup.string().required("Password is required").min(6, "Password must be at least 6 characters"),
+  password: yup.string().required("Password is required").min(6, "At least 6 characters"),
   confirmPassword: yup.string().oneOf([yup.ref("password")], "Passwords must match").required("Please confirm your password"),
 });
 
@@ -26,24 +26,16 @@ const SignupPage = () => {
   });
   const { signup, signingUp, setUser } = useContext(authContext);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
+  const googleBtnRef = useRef(null);
 
   const onSubmit = async (data) => { await signup(data); reset(); };
 
-  useEffect(() => {
-    if (!window.google || !GOOGLE_CLIENT_ID) return;
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleResponse,
-    });
-    window.google.accounts.id.renderButton(
-      document.getElementById("google-signup-btn"),
-      { theme: "outline", size: "large", width: "100%", text: "signup_with" }
-    );
-  }, []);
-
   const handleGoogleResponse = async (response) => {
+    setGoogleLoading(true);
     try {
       const res = await fetch(`${baseUrl}/auth/google`, {
         method: "POST",
@@ -58,102 +50,163 @@ const SignupPage = () => {
       navigate("/dashboard");
     } catch {
       toast.error("Google sign up failed. Please try again.");
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
+  const initGoogle = () => {
+    if (!window.google || !GOOGLE_CLIENT_ID || !googleBtnRef.current) return;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleResponse,
+    });
+    window.google.accounts.id.renderButton(googleBtnRef.current, {
+      theme: "outline", size: "large", width: googleBtnRef.current.offsetWidth || 360, text: "signup_with",
+    });
+  };
+
+  useEffect(() => {
+    // Wait for GSI script to load
+    if (window.google) {
+      initGoogle();
+    } else {
+      const interval = setInterval(() => {
+        if (window.google) { clearInterval(interval); initGoogle(); }
+      }, 200);
+      return () => clearInterval(interval);
+    }
+  }, []);
+
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #eff6ff 0%, #fff 60%)", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #fff 100%)",
+      fontFamily: "Inter, system-ui, sans-serif",
+      display: "flex", flexDirection: "column"
+    }}>
+      {/* Nav */}
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 2rem" }}>
         <Link to="/" style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", color: "#64748b", textDecoration: "none" }}>
-          <FontAwesomeIcon icon={faArrowLeft} /> Back to home
+          <FontAwesomeIcon icon={faArrowLeft} /> Back
         </Link>
-        <Link to="/" style={{ fontSize: "16px", fontWeight: 600, color: "#2563eb", textDecoration: "none" }}>
+        <Link to="/" style={{ fontSize: "15px", fontWeight: 700, color: "#2563eb", textDecoration: "none", letterSpacing: "-0.01em" }}>
           ProFile ElevateAI
         </Link>
       </nav>
 
-      <div style={{ display: "flex", justifyContent: "center", padding: "1.5rem 1.5rem 4rem" }}>
+      {/* Card */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem 1.25rem 3rem" }}>
         <div style={{
-          width: "100%", maxWidth: "440px", background: "#fff",
-          border: "1px solid #e2e8f0", borderRadius: "14px", padding: "2.5rem 2rem",
-          boxShadow: "0 4px 24px rgba(37,99,235,0.08)"
+          width: "100%", maxWidth: "460px",
+          background: "#fff", border: "1px solid #e2e8f0",
+          borderRadius: "20px", padding: "2.25rem 2rem",
+          boxShadow: "0 8px 40px rgba(37,99,235,0.10)"
         }}>
-          <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#0f172a", marginBottom: "6px", textAlign: "center" }}>
-            Create your account
-          </h1>
-          <p style={{ fontSize: "14px", color: "#64748b", marginBottom: "2rem", textAlign: "center" }}>
-            Start building a resume that gets noticed
-          </p>
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
+            <div style={{
+              width: "48px", height: "48px", borderRadius: "14px",
+              background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "0 auto 1rem", boxShadow: "0 4px 12px rgba(37,99,235,0.3)"
+            }}>
+              <i className="fa-solid fa-file-lines" style={{ color: "#fff", fontSize: "20px" }}></i>
+            </div>
+            <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>
+              Create your account
+            </h1>
+            <p style={{ fontSize: "14px", color: "#64748b", margin: 0 }}>
+              Start building a resume that gets noticed
+            </p>
+          </div>
 
           {/* Google button */}
           {GOOGLE_CLIENT_ID && (
             <>
-              <div id="google-signup-btn" style={{ width: "100%", marginBottom: "1.25rem" }}></div>
+              <div
+                ref={googleBtnRef}
+                style={{ width: "100%", marginBottom: "1.25rem", minHeight: "44px", display: "flex", justifyContent: "center" }}
+              ></div>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "1.25rem" }}>
                 <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-                <span style={{ fontSize: "12px", color: "#94a3b8" }}>or sign up with email</span>
+                <span style={{ fontSize: "12px", color: "#94a3b8", whiteSpace: "nowrap" }}>or sign up with email</span>
                 <div style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
               </div>
             </>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "1rem" }}>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>First name</label>
-                <input type="text" {...register("firstName")} placeholder="John" style={inputStyle(errors.firstName)} />
-                {errors.firstName && <p style={errorStyle}>{errors.firstName.message}</p>}
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={labelStyle}>Last name</label>
-                <input type="text" {...register("lastName")} placeholder="Doe" style={inputStyle(errors.lastName)} />
-                {errors.lastName && <p style={errorStyle}>{errors.lastName.message}</p>}
-              </div>
+          <form onSubmit={handleSubmit(onSubmit)} style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+            {/* First + Last name */}
+            <div style={{ display: "flex", gap: "10px" }}>
+              <FloatField
+                label="First name" id="firstName" type="text"
+                register={register("firstName")} error={errors.firstName}
+                focused={focusedField === "firstName"} setFocused={setFocusedField}
+              />
+              <FloatField
+                label="Last name" id="lastName" type="text"
+                register={register("lastName")} error={errors.lastName}
+                focused={focusedField === "lastName"} setFocused={setFocusedField}
+              />
             </div>
 
-            <div style={{ marginBottom: "1rem" }}>
-              <label style={labelStyle}>Email</label>
-              <input type="email" {...register("email")} placeholder="you@example.com" style={inputStyle(errors.email)} />
-              {errors.email && <p style={errorStyle}>{errors.email.message}</p>}
-            </div>
+            {/* Email */}
+            <FloatField
+              label="Email address" id="email" type="email"
+              register={register("email")} error={errors.email}
+              focused={focusedField === "email"} setFocused={setFocusedField}
+            />
 
-            <div style={{ marginBottom: "1rem" }}>
-              <label style={labelStyle}>Password</label>
-              <div style={{ position: "relative" }}>
-                <input type={showPassword ? "text" : "password"} {...register("password")} placeholder="••••••••"
-                  style={{ ...inputStyle(errors.password), paddingRight: "44px" }} />
-                <span onClick={() => setShowPassword(!showPassword)} style={eyeStyle}>
+            {/* Password */}
+            <FloatField
+              label="Password" id="password"
+              type={showPassword ? "text" : "password"}
+              register={register("password")} error={errors.password}
+              focused={focusedField === "password"} setFocused={setFocusedField}
+              rightIcon={
+                <span onClick={() => setShowPassword(p => !p)} style={eyeStyle}>
                   <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
                 </span>
-              </div>
-              {errors.password && <p style={errorStyle}>{errors.password.message}</p>}
-            </div>
+              }
+            />
 
-            <div style={{ marginBottom: "1.5rem" }}>
-              <label style={labelStyle}>Confirm password</label>
-              <div style={{ position: "relative" }}>
-                <input type={showConfirmPassword ? "text" : "password"} {...register("confirmPassword")} placeholder="••••••••"
-                  style={{ ...inputStyle(errors.confirmPassword), paddingRight: "44px" }} />
-                <span onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={eyeStyle}>
-                  <FontAwesomeIcon icon={showConfirmPassword ? faEye : faEyeSlash} />
+            {/* Confirm password */}
+            <FloatField
+              label="Confirm password" id="confirmPassword"
+              type={showConfirm ? "text" : "password"}
+              register={register("confirmPassword")} error={errors.confirmPassword}
+              focused={focusedField === "confirmPassword"} setFocused={setFocusedField}
+              rightIcon={
+                <span onClick={() => setShowConfirm(p => !p)} style={eyeStyle}>
+                  <FontAwesomeIcon icon={showConfirm ? faEye : faEyeSlash} />
                 </span>
-              </div>
-              {errors.confirmPassword && <p style={errorStyle}>{errors.confirmPassword.message}</p>}
-            </div>
+              }
+            />
 
-            <button type="submit" disabled={signingUp} style={{
-              width: "100%", background: signingUp ? "#93c5fd" : "#2563eb", color: "#fff",
-              border: "none", borderRadius: "8px", padding: "12px", fontSize: "15px", fontWeight: 500,
-              cursor: signingUp ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center"
-            }}>
-              {signingUp ? <FontAwesomeIcon icon={faSpinner} spin /> : "Sign up"}
+            {/* Submit */}
+            <button
+              type="submit" disabled={signingUp}
+              style={{
+                width: "100%", marginTop: "0.25rem",
+                background: signingUp ? "#93c5fd" : "linear-gradient(135deg, #2563eb, #1d4ed8)",
+                color: "#fff", border: "none", borderRadius: "10px",
+                padding: "13px", fontSize: "15px", fontWeight: 600,
+                cursor: signingUp ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                boxShadow: signingUp ? "none" : "0 4px 12px rgba(37,99,235,0.3)",
+                transition: "all 0.15s"
+              }}
+            >
+              {signingUp
+                ? <><FontAwesomeIcon icon={faSpinner} spin /> Creating account…</>
+                : "Create account"}
             </button>
           </form>
 
-          <p style={{ textAlign: "center", fontSize: "14px", color: "#64748b", marginTop: "1.75rem" }}>
+          <p style={{ textAlign: "center", fontSize: "14px", color: "#64748b", marginTop: "1.5rem" }}>
             Already have an account?{" "}
-            <Link to="/login" style={{ color: "#2563eb", fontWeight: 500, textDecoration: "none" }}>Login</Link>
+            <Link to="/login" style={{ color: "#2563eb", fontWeight: 600, textDecoration: "none" }}>Sign in</Link>
           </p>
         </div>
       </div>
@@ -161,13 +214,44 @@ const SignupPage = () => {
   );
 };
 
-const labelStyle = { display: "block", fontSize: "13px", fontWeight: 500, color: "#374151", marginBottom: "6px" };
-const inputStyle = (hasError) => ({
-  width: "100%", padding: "11px 14px", fontSize: "14px",
-  border: `1px solid ${hasError ? "#fca5a5" : "#e2e8f0"}`,
-  borderRadius: "8px", outline: "none", color: "#1e293b", background: "#fff",
-});
-const eyeStyle = { position: "absolute", right: "14px", top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#94a3b8", fontSize: "15px" };
-const errorStyle = { color: "#dc2626", fontSize: "12px", marginTop: "5px" };
+// ── Floating label input field ──────────────────────────────────────
+const FloatField = ({ label, id, type, register, error, focused, setFocused, rightIcon }) => {
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "5px" }}>
+      <label style={{
+        fontSize: "12.5px", fontWeight: 500,
+        color: focused ? "#2563eb" : error ? "#dc2626" : "#374151",
+        transition: "color 0.15s"
+      }}>
+        {label}
+      </label>
+      <div style={{ position: "relative" }}>
+        <input
+          type={type}
+          {...register}
+          onFocus={() => setFocused(id)}
+          onBlur={() => setFocused(null)}
+          style={{
+            width: "100%", padding: rightIcon ? "11px 42px 11px 14px" : "11px 14px",
+            fontSize: "14px",
+            border: `1.5px solid ${error ? "#fca5a5" : focused ? "#2563eb" : "#e2e8f0"}`,
+            borderRadius: "10px", outline: "none",
+            color: "#1e293b", background: error ? "#fff5f5" : focused ? "#f8faff" : "#fff",
+            transition: "all 0.15s",
+            boxShadow: focused ? "0 0 0 3px rgba(37,99,235,0.1)" : "none",
+          }}
+        />
+        {rightIcon}
+      </div>
+      {error && <p style={{ color: "#dc2626", fontSize: "11.5px", margin: 0 }}>{error.message}</p>}
+    </div>
+  );
+};
+
+const eyeStyle = {
+  position: "absolute", right: "13px", top: "50%",
+  transform: "translateY(-50%)", cursor: "pointer",
+  color: "#94a3b8", fontSize: "15px"
+};
 
 export default SignupPage;
