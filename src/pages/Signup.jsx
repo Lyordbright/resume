@@ -48,18 +48,29 @@ export default function SignupPage() {
   };
 
   const initGoogle = () => {
-    if (!window.google || !GOOGLE_CLIENT_ID || !googleRef.current) return;
-    window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogle });
+  if (!window.google || !GOOGLE_CLIENT_ID || !googleRef.current) return;
+  window.google.accounts.id.initialize({ 
+    client_id: GOOGLE_CLIENT_ID, 
+    callback: handleGoogle 
+  });
+  setTimeout(() => {
+    if (!googleRef.current) return;
+    const width = googleRef.current.getBoundingClientRect().width || 380;
     window.google.accounts.id.renderButton(googleRef.current, {
-      theme: "outline", size: "large", width: googleRef.current.offsetWidth || 380, text: "signup_with",
+      theme: "outline", size: "large", width: Math.floor(width), text: "continue_with",
     });
-  };
+  }, 100);
+};
 
-  useEffect(() => {
+ useEffect(() => {
+  setTimeout(() => {
     if (window.google) { initGoogle(); return; }
-    const t = setInterval(() => { if (window.google) { clearInterval(t); initGoogle(); } }, 200);
+    const t = setInterval(() => { 
+      if (window.google) { clearInterval(t); initGoogle(); } 
+    }, 200);
     return () => clearInterval(t);
-  }, []);
+  }, 300);
+}, []);
 
   const field = (id, label, type, reg, err) => (
     <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>

@@ -45,18 +45,29 @@ export default function LoginPage() {
   };
 
   const initGoogle = () => {
-    if (!window.google || !GOOGLE_CLIENT_ID || !googleRef.current) return;
-    window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogle });
+  if (!window.google || !GOOGLE_CLIENT_ID || !googleRef.current) return;
+  window.google.accounts.id.initialize({ 
+    client_id: GOOGLE_CLIENT_ID, 
+    callback: handleGoogle 
+  });
+  setTimeout(() => {
+    if (!googleRef.current) return;
+    const width = googleRef.current.getBoundingClientRect().width || 380;
     window.google.accounts.id.renderButton(googleRef.current, {
-      theme: "outline", size: "large", width: googleRef.current.offsetWidth || 380, text: "continue_with",
+      theme: "outline", size: "large", width: Math.floor(width), text: "continue_with",
     });
-  };
+  }, 100);
+};
 
   useEffect(() => {
+  setTimeout(() => {
     if (window.google) { initGoogle(); return; }
-    const t = setInterval(() => { if (window.google) { clearInterval(t); initGoogle(); } }, 200);
+    const t = setInterval(() => { 
+      if (window.google) { clearInterval(t); initGoogle(); } 
+    }, 200);
     return () => clearInterval(t);
-  }, []);
+  }, 300);
+}, []);
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", fontFamily: "Inter, system-ui, sans-serif" }}>
