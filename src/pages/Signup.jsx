@@ -1,3 +1,7 @@
+// FULL REDESIGN VERSION
+// Drop-in replacement for Signup.jsx
+// Authentication logic preserved; UI upgraded.
+
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -21,15 +25,16 @@ export default function SignupPage() {
   const { signup, signingUp, setUser } = useContext(authContext);
   const navigate = useNavigate();
   const googleRef = useRef(null);
-  const [show, setShow] = useState({ password: false, confirm: false });
-  const [active, setActive] = useState(null);
+  const [show, setShow] = useState({ password:false, confirm:false });
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit, formState:{ errors }, reset } = useForm({
     resolver: yupResolver(schema),
-    defaultValues: { firstName: "", lastName: "", email: "", password: "", confirmPassword: "" },
+    defaultValues:{
+      firstName:"", lastName:"", email:"", password:"", confirmPassword:""
+    }
   });
 
-  const onSubmit = async (data) => { await signup(data); reset(); };
+  const onSubmit = async(data)=>{ await signup(data); reset(); };
 
   const handleGoogle = async (response) => {
     try {
@@ -39,218 +44,173 @@ export default function SignupPage() {
         body: JSON.stringify({ credential: response.credential }),
       });
       const data = await res.json();
-      if (!res.ok) { toast.error(data.message || "Google sign up failed"); return; }
+      if (!res.ok) return toast.error(data.message || "Google sign up failed");
       localStorage.setItem("token", data.token);
       setUser(data.user);
       toast.success("Welcome! Redirecting…");
       navigate("/dashboard");
-    } catch { toast.error("Google sign up failed."); }
+    } catch {
+      toast.error("Google sign up failed.");
+    }
   };
 
   const initGoogle = () => {
-  if (!window.google || !GOOGLE_CLIENT_ID || !googleRef.current) return;
-  window.google.accounts.id.initialize({ 
-    client_id: GOOGLE_CLIENT_ID, 
-    callback: handleGoogle 
-  });
-  setTimeout(() => {
-    if (!googleRef.current) return;
-    const width = googleRef.current.getBoundingClientRect().width || 380;
-    window.google.accounts.id.renderButton(googleRef.current, {
-      theme: "outline", size: "large", width: Math.floor(width), text: "continue_with",
+    if (!window.google || !GOOGLE_CLIENT_ID || !googleRef.current) return;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogle,
     });
-  }, 100);
-};
 
- useEffect(() => {
-  setTimeout(() => {
-    if (window.google) { initGoogle(); return; }
-    const t = setInterval(() => { 
-      if (window.google) { clearInterval(t); initGoogle(); } 
-    }, 200);
-    return () => clearInterval(t);
-  }, 300);
-}, []);
+    const width = googleRef.current.getBoundingClientRect().width || 420;
 
-  const field = (id, label, type, reg, err) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: active === id ? "#2563eb" : err ? "#ef4444" : "#64748b", letterSpacing: "0.03em", textTransform: "uppercase" }}>
-        {label}
-      </label>
-      <input
-        type={type} {...reg}
-        onFocus={() => setActive(id)} onBlur={() => setActive(null)}
-        style={{
-          padding: "12px 14px", fontSize: 14, borderRadius: 10, outline: "none", width: "100%",
-          border: `2px solid ${err ? "#fca5a5" : active === id ? "#2563eb" : "#f1f5f9"}`,
-          background: err ? "#fff5f5" : active === id ? "#f8faff" : "#f8fafc",
-          color: "#0f172a", transition: "all 0.15s",
-          boxShadow: active === id ? "0 0 0 4px rgba(37,99,235,0.08)" : "none",
-        }}
-      />
-      {err && <span style={{ fontSize: 11, color: "#ef4444" }}>{err.message}</span>}
-    </div>
-  );
+    window.google.accounts.id.renderButton(googleRef.current, {
+      theme: "outline",
+      size: "large",
+      width: Math.floor(width),
+      text: "continue_with",
+    });
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (window.google) return initGoogle();
+      const t = setInterval(() => {
+        if (window.google) {
+          clearInterval(t);
+          initGoogle();
+        }
+      }, 200);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", fontFamily: "Inter, system-ui, sans-serif" }}>
-
-      {/* Left panel */}
-      <div style={{
-        width: "42%", background: "linear-gradient(160deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%)",
-        display: "flex", flexDirection: "column", justifyContent: "space-between",
-        padding: "2.5rem", position: "relative", overflow: "hidden"
-      }} className="signup-left-panel">
-        {/* Background circles */}
-        <div style={{ position: "absolute", width: 320, height: 320, borderRadius: "50%", background: "rgba(255,255,255,0.05)", top: -80, right: -80 }} />
-        <div style={{ position: "absolute", width: 220, height: 220, borderRadius: "50%", background: "rgba(255,255,255,0.07)", bottom: 60, left: -60 }} />
-
-        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", zIndex: 1 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.2)",
-            display: "flex", alignItems: "center", justifyContent: "center"
-          }}>
-            <i className="fa-solid fa-file-lines" style={{ color: "#fff", fontSize: 16 }}></i>
-          </div>
-          <span style={{ color: "#fff", fontWeight: 700, fontSize: 15 }}>ProFile ElevateAI</span>
-        </Link>
-
-        <div style={{ zIndex: 1 }}>
-          <h2 style={{ color: "#fff", fontSize: "clamp(22px, 3vw, 30px)", fontWeight: 800, margin: "0 0 1rem", lineHeight: 1.25 }}>
-            Build a resume that gets you hired
-          </h2>
-          <p style={{ color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 1.7, margin: "0 0 2rem" }}>
-            Join thousands of job seekers who use AI to craft professional, ATS-optimized resumes in minutes.
-          </p>
-          {[
-            { icon: "fa-wand-magic-sparkles", text: "AI-powered resume generation" },
-            { icon: "fa-file-shield", text: "ATS-optimized formatting" },
-            { icon: "fa-download", text: "Export to PDF instantly" },
-          ].map((item) => (
-            <div key={item.text} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.15)",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-              }}>
-                <i className={`fa-solid ${item.icon}`} style={{ color: "#fff", fontSize: 13 }}></i>
-              </div>
-              <span style={{ color: "rgba(255,255,255,0.9)", fontSize: 13.5 }}>{item.text}</span>
+    <div style={styles.page}>
+      <div style={styles.left} className="signup-left-panel">
+        <div>
+          <Link to="/" style={styles.logo}>
+            <div style={styles.logoIcon}>
+              <i className="fa-solid fa-file-lines"></i>
             </div>
-          ))}
+            <span>ProFile ElevateAI</span>
+          </Link>
+
+          <h1 style={styles.heroTitle}>
+            Create resumes that stand out.
+          </h1>
+
+          <p style={styles.heroText}>
+            Build ATS‑optimized resumes with AI assistance and land more interviews.
+          </p>
+
+          <div style={styles.featureGrid}>
+            {["AI Resume Builder","ATS Optimization","Instant PDF Export","Professional Templates"].map(item=>(
+              <div key={item} style={styles.featureCard}>{item}</div>
+            ))}
+          </div>
         </div>
 
-        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: 12, zIndex: 1, margin: 0 }}>
-          © 2025 ProFile ElevateAI
-        </p>
+        <div style={styles.badge}>10,000+ resumes created</div>
       </div>
 
-      {/* Right panel */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem 1.5rem", overflowY: "auto" }}>
-        <div style={{ width: "100%", maxWidth: 420 }}>
+      <div style={styles.right}>
+        <div style={styles.card}>
+          <h2 style={styles.title}>Create your account</h2>
+          <p style={styles.subtitle}>Start building your professional resume today.</p>
 
-          <div style={{ marginBottom: "2rem" }}>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: "#0f172a", margin: "0 0 6px" }}>Create your account</h1>
-            <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>Free forever. No credit card required.</p>
-          </div>
-
-          {/* Google */}
           {GOOGLE_CLIENT_ID && (
             <>
-              <div ref={googleRef} style={{ width: "100%", minHeight: 44, marginBottom: "1.25rem", display: "flex", justifyContent: "center" }} />
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: "1.25rem" }}>
-                <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
-                <span style={{ fontSize: 12, color: "#94a3b8" }}>or with email</span>
-                <div style={{ flex: 1, height: 1, background: "#e2e8f0" }} />
-              </div>
+              <div ref={googleRef} style={{marginBottom:"1rem"}} />
+              <div style={styles.divider}><span>or continue with email</span></div>
             </>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div style={{ display: "flex", gap: "12px" }}>
-              {field("firstName", "First name", "text", register("firstName"), errors.firstName)}
-              {field("lastName", "Last name", "text", register("lastName"), errors.lastName)}
-            </div>
-            {field("email", "Email address", "email", register("email"), errors.email)}
-
-            {/* Password */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: active === "password" ? "#2563eb" : errors.password ? "#ef4444" : "#64748b", letterSpacing: "0.03em", textTransform: "uppercase" }}>
-                Password
-              </label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type={show.password ? "text" : "password"}
-                  {...register("password")}
-                  onFocus={() => setActive("password")} onBlur={() => setActive(null)}
-                  style={{
-                    width: "100%", padding: "12px 44px 12px 14px", fontSize: 14, borderRadius: 10, outline: "none",
-                    border: `2px solid ${errors.password ? "#fca5a5" : active === "password" ? "#2563eb" : "#f1f5f9"}`,
-                    background: errors.password ? "#fff5f5" : active === "password" ? "#f8faff" : "#f8fafc",
-                    color: "#0f172a", transition: "all 0.15s",
-                    boxShadow: active === "password" ? "0 0 0 4px rgba(37,99,235,0.08)" : "none",
-                  }}
-                />
-                <span onClick={() => setShow(s => ({ ...s, password: !s.password }))} style={eye}>
-                  <i className={`fa-solid ${show.password ? "fa-eye" : "fa-eye-slash"}`}></i>
-                </span>
-              </div>
-              {errors.password && <span style={{ fontSize: 11, color: "#ef4444" }}>{errors.password.message}</span>}
+          <form onSubmit={handleSubmit(onSubmit)} style={styles.form}>
+            <div className="name-grid">
+              <input {...register("firstName")} placeholder="First name" style={styles.input}/>
+              <input {...register("lastName")} placeholder="Last name" style={styles.input}/>
             </div>
 
-            {/* Confirm password */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: active === "confirm" ? "#2563eb" : errors.confirmPassword ? "#ef4444" : "#64748b", letterSpacing: "0.03em", textTransform: "uppercase" }}>
-                Confirm password
-              </label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type={show.confirm ? "text" : "password"}
-                  {...register("confirmPassword")}
-                  onFocus={() => setActive("confirm")} onBlur={() => setActive(null)}
-                  style={{
-                    width: "100%", padding: "12px 44px 12px 14px", fontSize: 14, borderRadius: 10, outline: "none",
-                    border: `2px solid ${errors.confirmPassword ? "#fca5a5" : active === "confirm" ? "#2563eb" : "#f1f5f9"}`,
-                    background: errors.confirmPassword ? "#fff5f5" : active === "confirm" ? "#f8faff" : "#f8fafc",
-                    color: "#0f172a", transition: "all 0.15s",
-                    boxShadow: active === "confirm" ? "0 0 0 4px rgba(37,99,235,0.08)" : "none",
-                  }}
-                />
-                <span onClick={() => setShow(s => ({ ...s, confirm: !s.confirm }))} style={eye}>
-                  <i className={`fa-solid ${show.confirm ? "fa-eye" : "fa-eye-slash"}`}></i>
-                </span>
-              </div>
-              {errors.confirmPassword && <span style={{ fontSize: 11, color: "#ef4444" }}>{errors.confirmPassword.message}</span>}
+            <input {...register("email")} placeholder="Email address" style={styles.input}/>
+
+            <div style={{position:"relative"}}>
+              <input {...register("password")} type={show.password ? "text":"password"} placeholder="Password" style={styles.input}/>
             </div>
 
-            <button type="submit" disabled={signingUp} style={{
-              width: "100%", padding: "13px", marginTop: 4,
-              background: signingUp ? "#93c5fd" : "linear-gradient(135deg, #2563eb, #1d4ed8)",
-              color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700,
-              cursor: signingUp ? "not-allowed" : "pointer",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              boxShadow: signingUp ? "none" : "0 4px 14px rgba(37,99,235,0.35)",
-            }}>
-              {signingUp ? <><i className="fa-solid fa-spinner fa-spin"></i> Creating…</> : "Create account →"}
+            <div style={{position:"relative"}}>
+              <input {...register("confirmPassword")} type={show.confirm ? "text":"password"} placeholder="Confirm password" style={styles.input}/>
+            </div>
+
+            {(errors.firstName || errors.lastName || errors.email || errors.password || errors.confirmPassword) &&
+              <div style={{color:"#ef4444",fontSize:12}}>Please correct the highlighted fields.</div>
+            }
+
+            <button type="submit" disabled={signingUp} style={styles.button}>
+              {signingUp ? "Creating..." : "Create Account"}
             </button>
           </form>
 
-          <p style={{ textAlign: "center", fontSize: 14, color: "#64748b", marginTop: "1.75rem" }}>
-            Already have an account?{" "}
-            <Link to="/login" style={{ color: "#2563eb", fontWeight: 700, textDecoration: "none" }}>Sign in</Link>
+          <p style={{textAlign:"center",marginTop:"1.5rem"}}>
+            Already have an account? <Link to="/login">Sign in</Link>
           </p>
         </div>
       </div>
 
       <style>{`
-        @media (max-width: 640px) {
-          .signup-left-panel { display: none !important; }
+        .name-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        @media(max-width:768px){
+          .signup-left-panel{display:none!important}
+          .name-grid{grid-template-columns:1fr}
         }
       `}</style>
     </div>
   );
 }
 
-const eye = {
-  position: "absolute", right: 13, top: "50%",
-  transform: "translateY(-50%)", cursor: "pointer", color: "#94a3b8", fontSize: 15
+const styles = {
+  page:{
+    minHeight:"100vh",
+    display:"flex",
+    background:"linear-gradient(135deg,#eff6ff,#ffffff)",
+    fontFamily:"Inter,system-ui,sans-serif"
+  },
+  left:{
+    width:"45%",
+    background:"linear-gradient(135deg,#1e3a8a,#2563eb)",
+    color:"#fff",
+    padding:"4rem",
+    display:"flex",
+    flexDirection:"column",
+    justifyContent:"space-between"
+  },
+  right:{
+    flex:1,
+    display:"flex",
+    justifyContent:"center",
+    alignItems:"center",
+    padding:"2rem"
+  },
+  card:{
+    width:"100%",
+    maxWidth:"520px",
+    background:"rgba(255,255,255,.75)",
+    backdropFilter:"blur(18px)",
+    borderRadius:"28px",
+    padding:"2.5rem",
+    boxShadow:"0 25px 60px rgba(15,23,42,.12)"
+  },
+  logo:{display:"flex",gap:"10px",alignItems:"center",color:"#fff",textDecoration:"none",fontWeight:700},
+  logoIcon:{width:"40px",height:"40px",display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(255,255,255,.15)",borderRadius:"12px"},
+  heroTitle:{fontSize:"3rem",lineHeight:1.1,marginTop:"4rem"},
+  heroText:{opacity:.85,maxWidth:"420px"},
+  featureGrid:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px",marginTop:"2rem"},
+  featureCard:{background:"rgba(255,255,255,.12)",padding:"1rem",borderRadius:"14px"},
+  badge:{background:"rgba(255,255,255,.12)",padding:"1rem",borderRadius:"14px"},
+  title:{fontSize:"2rem",margin:0},
+  subtitle:{color:"#64748b"},
+  divider:{textAlign:"center",margin:"1rem 0",color:"#94a3b8"},
+  form:{display:"flex",flexDirection:"column",gap:"1rem"},
+  input:{padding:"14px",borderRadius:"12px",border:"1px solid #dbe3ef",width:"100%"},
+  button:{padding:"14px",border:"none",borderRadius:"12px",background:"#2563eb",color:"#fff",fontWeight:700,cursor:"pointer"}
 };
