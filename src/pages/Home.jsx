@@ -60,7 +60,15 @@ const Home = () => {
       )}
 
       <section style={hero}>
-        <span style={badge}>AI-POWERED RESUME BUILDER</span>
+        <h3 
+          style={{
+            fontSize: "18px",
+            fontWeight: 850,
+            whiteSpace: "nowrap"
+          }}
+          >
+          AI-POWERED RESUME BUILDER
+        </h3>
 
         <h1 style={heroTitle}>
           Build a resume that gets you hired

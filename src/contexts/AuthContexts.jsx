@@ -54,7 +54,7 @@ const AuthProvider = ({ children }) => {
       }
       localStorage.setItem("token", resData.token);
       setUser(resData.user);
-      toast.success("Welcome back! Redirecting…");
+      toast.success("Welcome back!");
       navigate("/dashboard");
     } catch (error) {
       toast.error(error.message || "Unable to login");

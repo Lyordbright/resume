@@ -43,6 +43,8 @@ const ResumeEditor = () => {
   const token = localStorage.getItem("token");
   const headers = { authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
+  const isMobile = window.innerWidth <= 768;
+
   // ── Load resume ──
   useEffect(() => {
     fetch(`${baseUrl}/resumes/${id}`, { headers: { authorization: `Bearer ${token}` } })
@@ -245,7 +247,10 @@ const ResumeEditor = () => {
   }
 
   return (
-    <div style={{ display: "flex", gap: "2rem", alignItems: "flex-start", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div style={{ display: "flex",
+    flexDirection: isMobile ? "column" : "row",
+    gap: "2rem",
+    alignItems: "flex-start", }}>
 
       {/* ── Editor column ── */}
       <div style={{ flex: showPreview ? "0 0 480px" : "1 1 auto", maxWidth: showPreview ? "480px" : "820px", minWidth: 0 }}>
@@ -257,13 +262,18 @@ const ResumeEditor = () => {
               <i className="fa-solid fa-arrow-left"></i>
             </Link>
           </a>
-          <input
+          <input placeholder="TITLE"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            style={{
-              flex: 1, minWidth: "140px", fontSize: "18px", fontWeight: 700, color: "#0f172a",
-              border: "none", outline: "none", background: "transparent", padding: "4px 0"
-            }}
+              onChange={(e) => setTitle(e.target.value)}
+              style={{
+                flex: 1,
+                fontSize: "28px",
+                fontWeight: "800",
+                color: "#0f172a",
+                border: "none",
+                background: "transparent",
+                outline: "none",
+              }}
           />
           {isDirty && (
             <span style={{ fontSize: "11px", color: "#d97706", background: "#fffbeb", padding: "3px 9px", borderRadius: "12px", whiteSpace: "nowrap" }}>
@@ -278,33 +288,33 @@ const ResumeEditor = () => {
             value={template}
             onChange={(e) => setTemplate(e.target.value)}
             style={{
-              background: "#fff", color: "#374151", border: "1px solid #e2e8f0",
-              borderRadius: "8px", padding: "9px 12px", fontSize: "13px", cursor: "pointer", outline: "none"
+              ...cardStyle,
             }}
           >
             <option value="classic">Classic template</option>
             <option value="modern">Modern template</option>
             <option value="minimal">Minimal template</option>
           </select>
+          {isMobile && (
           <button
-            onClick={() => setShowPreview((p) => !p)}
+            onClick={() => setShowPreview(!showPreview)}
             style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              background: showPreview ? "#eff6ff" : "#fff", color: "#2563eb",
-              border: "1px solid #93c5fd", borderRadius: "8px", padding: "9px 16px",
-              fontSize: "13px", fontWeight: 500, cursor: "pointer"
+              width: "100%",
+              padding: "12px",
+              background: "#2563eb",
+              color: "#fff",
+              border: "none",
+              borderRadius: "10px",
+              cursor: "pointer",
+              fontWeight: 600,
             }}
           >
-            <i className="fa-solid fa-eye"></i>
-            {showPreview ? "Hide preview" : "Preview"}
+            {showPreview ? "Hide Resume Preview" : "Show Resume Preview"}
           </button>
+        )}
           <button
             onClick={handleExportPDF}
-            style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              background: "#fff", color: "#374151", border: "1px solid #e2e8f0",
-              borderRadius: "8px", padding: "9px 16px", fontSize: "13px", fontWeight: 500, cursor: "pointer"
-            }}
+            style={secondaryBtn}
           >
             <i className="fa-solid fa-file-pdf"></i>
             Export PDF
@@ -312,12 +322,7 @@ const ResumeEditor = () => {
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              background: saving ? "#93c5fd" : "#2563eb", color: "#fff", border: "none",
-              borderRadius: "8px", padding: "9px 18px", fontSize: "13px", fontWeight: 500,
-              cursor: saving ? "not-allowed" : "pointer", marginLeft: "auto"
-            }}
+            style={primaryBtn}
           >
             {saving ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-floppy-disk"></i>}
             Save
@@ -335,7 +340,7 @@ const ResumeEditor = () => {
               onClick={() => setActiveTab(tab.id)}
               style={{
                 display: "flex", alignItems: "center", gap: "8px",
-                padding: "10px 14px", background: "none", border: "none",
+                padding: "10px 14px", background: "none", border: "none", transition: "0.4s",
                 borderBottom: activeTab === tab.id ? "2px solid #2563eb" : "2px solid transparent",
                 color: activeTab === tab.id ? "#2563eb" : "#64748b",
                 fontSize: "13.5px", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap"
@@ -355,7 +360,7 @@ const ResumeEditor = () => {
         {/* ── Personal tab ── */}
         {activeTab === "personal" && (
           <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div style={{ ...mobileGrid }}>
               <Field label="Full name *" value={content.personalInfo.fullName} onChange={(v) => updatePersonal("fullName", v)} placeholder="John Doe" />
               <Field label="Email *" value={content.personalInfo.email} onChange={(v) => updatePersonal("email", v)} placeholder="you@example.com" />
               <Field label="Phone" value={content.personalInfo.phone} onChange={(v) => updatePersonal("phone", v)} placeholder="+234 800 000 0000" />
@@ -384,7 +389,7 @@ const ResumeEditor = () => {
                 <button onClick={() => removeExperience(idx)} style={removeBtnStyle} aria-label="Remove">
                   <i className="fa-solid fa-trash"></i>
                 </button>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }}>
+                <div style={{ ...mobileGrid }}>
                   <Field label="Company" value={exp.company} onChange={(v) => updateExperience(idx, "company", v)} placeholder="Company name" />
                   <Field label="Role" value={exp.role} onChange={(v) => updateExperience(idx, "role", v)} placeholder="Job title" />
                   <Field label="Start date" value={exp.startDate} onChange={(v) => updateExperience(idx, "startDate", v)} placeholder="Jan 2023" />
@@ -423,7 +428,7 @@ const ResumeEditor = () => {
                 <button onClick={() => removeEducation(idx)} style={removeBtnStyle} aria-label="Remove">
                   <i className="fa-solid fa-trash"></i>
                 </button>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div style={{ ...mobileGrid }}>
                   <Field label="Institution" value={edu.institution} onChange={(v) => updateEducation(idx, "institution", v)} placeholder="University name" />
                   <Field label="Degree" value={edu.degree} onChange={(v) => updateEducation(idx, "degree", v)} placeholder="B.Sc, M.Sc, etc." />
                   <Field label="Field of study" value={edu.field} onChange={(v) => updateEducation(idx, "field", v)} placeholder="Computer Science" />
@@ -446,7 +451,7 @@ const ResumeEditor = () => {
                 <button onClick={() => removeCertification(idx)} style={removeBtnStyle} aria-label="Remove">
                   <i className="fa-solid fa-trash"></i>
                 </button>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                <div style={{ ...mobileGrid }}>
                   <Field label="Certification name" value={cert.name} onChange={(v) => updateCertification(idx, "name", v)} placeholder="AWS Certified Developer" />
                   <Field label="Issuer" value={cert.issuer} onChange={(v) => updateCertification(idx, "issuer", v)} placeholder="Amazon Web Services" />
                   <Field label="Date" value={cert.date} onChange={(v) => updateCertification(idx, "date", v)} placeholder="March 2024" />
@@ -488,8 +493,9 @@ const ResumeEditor = () => {
               {content.skills.map((skill) => (
                 <span key={skill} style={{
                   display: "flex", alignItems: "center", gap: "8px",
-                  background: "#eff6ff", color: "#1d4ed8", fontSize: "13px",
-                  padding: "6px 12px", borderRadius: "20px"
+                  background:
+                 "linear-gradient(135deg,#dbeafe,#eff6ff)", color: "#1d4ed8", fontSize: "14px",
+                  padding: "6px 12px", borderRadius: "999px"
                 }}>
                   {skill}
                   <i
@@ -505,12 +511,21 @@ const ResumeEditor = () => {
       </div>
 
       {/* ── Live preview column ── */}
-      {showPreview && (
+      {showPreview && !isMobile && (
         <div style={{
-          flex: "1 1 auto", position: "sticky", top: "1.5rem",
-          maxHeight: "calc(100vh - 100px)", overflowY: "auto",
-          background: "#f1f5f9", borderRadius: "14px", padding: "1.5rem",
-          border: "1px solid #e2e8f0"
+          marginTop: isMobile ? "1rem" : 0,
+          flex: isMobile ? "unset" : "1 1 auto",
+          position: isMobile ? "relative" : "sticky",
+          top: isMobile ? "unset" : "1.5rem",
+          maxHeight: isMobile
+            ? "500px"
+            : "calc(100vh - 100px)",
+          overflowY: "auto",
+          background: "#f8fafc",
+          borderRadius: "16px",
+          padding: "1rem",
+          border: "1px solid #e2e8f0",
+          width: "100%",
         }}>
           <p style={{ fontSize: "12px", fontWeight: 600, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 12px" }}>
             Live preview
@@ -576,6 +591,64 @@ const ResumeEditor = () => {
           </div>
         </div>
       )}
+
+      {isMobile && showPreview && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 9999,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              height: "100%",
+              overflowY: "auto",
+              padding: "1rem",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "1rem",
+              }}
+            >
+              <h3>Resume Preview</h3>
+
+              <button
+                onClick={() => setShowPreview(false)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div
+              id="resume-print-area"
+              style={{
+                width: "100%",
+                overflowX: "auto",
+              }}
+            >
+              <ResumePreview
+                content={content}
+                template={template}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -599,9 +672,15 @@ const labelStyle = {
 };
 
 const inputStyle = {
-  width: "100%", padding: "10px 14px", fontSize: "14px",
-  border: "1px solid #e2e8f0", borderRadius: "8px", outline: "none",
-  color: "#1e293b", background: "#fff"
+  width: "90%",
+  padding: "14px 16px",
+  fontSize: "14px",
+  borderRadius: "14px",
+  border: "1px solid #dbeafe",
+  background: "#fff",
+  color: "#0f172a",
+  outline: "none",
+  transition: "all .25s ease",
 };
 
 const removeBtnStyle = {
@@ -614,6 +693,55 @@ const addBtnStyle = {
   display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
   background: "#eff6ff", color: "#2563eb", border: "1px dashed #93c5fd",
   borderRadius: "10px", padding: "14px", fontSize: "14px", fontWeight: 500, cursor: "pointer"
+};
+
+const cardStyle = {
+  background: "rgba(255,255,255,0.85)",
+  backdropFilter: "blur(20px)",
+  border: "1px solid rgba(255,255,255,0.7)",
+  borderRadius: "24px",
+  padding: "12px 20px",
+  boxShadow: "0 20px 50px rgba(15,23,42,.08)",
+  cursor: "pointer"
+};
+
+const primaryBtn = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  background:
+    "linear-gradient(135deg,#2563eb,#3b82f6)",
+  color: "#fff",
+  border: "none",
+  borderRadius: "14px",
+  padding: "12px 20px",
+  cursor: "pointer",
+  fontWeight: "600",
+  boxShadow:
+    "0 12px 30px rgba(37,99,235,.25)",
+  marginLeft: "auto"
+};
+
+const secondaryBtn = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  background: "#fff",
+  color: "#334155",
+  border: "1px solid #e2e8f0",
+  borderRadius: "14px",
+  padding: "12px 20px",
+  cursor: "pointer",
+  fontWeight: "600",
+};
+
+const mobileGrid = {
+  display: "grid",
+  gridTemplateColumns:
+    window.innerWidth < 768
+      ? "1fr"
+      : "1fr 1fr",
+  gap: "1rem",
 };
 
 export default ResumeEditor;

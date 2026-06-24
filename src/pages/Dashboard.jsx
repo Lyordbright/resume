@@ -75,18 +75,18 @@ export default function DashboardLayout() {
         className={`sidebar ${sidebarOpen ? "open" : ""}`}
         style={{
           width: "280px",
-          minHeight: "100vh",
+          height: "100vh",
           background: "rgba(15,23,42,0.88)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
           borderRight: "1px solid rgba(255,255,255,0.08)",
           display: "flex",
           flexDirection: "column",
-          padding: "1.5rem",
+          padding: "0.5rem",
           position: "sticky",
           top: 0,
-          overflowY: "auto",
-          zIndex: 50,
+          overflow: "hidden",
+          zIndex: 9999,
         }}
       >
         {/* Logo */}
@@ -205,7 +205,9 @@ export default function DashboardLayout() {
         </div>
 
         {/* Navigation */}
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1,
+          overflowY: "auto",
+          minHeight: 0, }}>
           <p
             style={{
               color: "#64748b",
@@ -221,9 +223,10 @@ export default function DashboardLayout() {
 
           <nav
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
+              flex: 1,
+              overflowY: "auto",
+              minHeight: 0,
+              paddingBottom: "1rem",
             }}
           >
             {NAV_ITEMS.map((item) => {
@@ -274,18 +277,20 @@ export default function DashboardLayout() {
         <button
           onClick={handleLogout}
           style={{
-            marginTop: "2rem",
-            border: "none",
-            cursor: "pointer",
+            marginTop: "auto",
+            width: "100%",
             padding: "14px",
             borderRadius: "14px",
             background: "rgba(239,68,68,.12)",
             color: "#f87171",
+            border: "none",
+            cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: "10px",
             fontWeight: 600,
+            flexShrink: 0,
           }}
         >
           <i className="fa-solid fa-arrow-right-from-bracket" />
@@ -328,17 +333,19 @@ export default function DashboardLayout() {
               aria-label="Open Menu"
               style={{
                 display: "none",
-                width: "42px",
-                height: "42px",
+                width: "44px",
+                height: "44px",
                 borderRadius: "12px",
-                border: "1px solid #e2e8f0",
+                border: "1px solid #cbd5e1",
                 background: "#fff",
                 cursor: "pointer",
-                fontSize: "22px",
+                fontSize: "24px",
+                fontWeight: "700",
                 color: "#0f172a",
+                flexShrink: 0,
               }}
-             >
-                ☰
+            >
+              ☰
             </button>
 
             {/* Actions */}
@@ -397,8 +404,10 @@ export default function DashboardLayout() {
             position: fixed !important;
             left: 0;
             top: 0;
+            height: 100vh;
             transform: translateX(-100%);
             transition: transform .3s ease;
+            z-index: 9999;
           }
 
           .sidebar.open {
@@ -415,7 +424,7 @@ export default function DashboardLayout() {
             position: fixed;
             inset: 0;
             background: rgba(15,23,42,.55);
-            z-index: 40;
+            z-index: 9998;
           }
         }
         

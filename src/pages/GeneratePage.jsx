@@ -269,7 +269,7 @@ const labelStyle = {
 };
 
 const inputStyle = {
-  width: "100%", padding: "10px 14px", fontSize: "14px",
+  width: "90%", padding: "10px 14px", fontSize: "14px",
   border: "1px solid #e2e8f0", borderRadius: "8px", outline: "none",
   color: "#1e293b", background: "#fff"
 };
