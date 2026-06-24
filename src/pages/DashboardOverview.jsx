@@ -12,32 +12,71 @@ const getGreeting = () => {
 };
 
 const QUICK_ACTIONS = [
-  { icon: "fa-wand-magic-sparkles", label: "Generate with AI", desc: "Let AI build your resume", path: "/dashboard/generate" },
-  { icon: "fa-file-circle-plus", label: "New resume", desc: "Start from scratch", path: "/dashboard/resumes" },
-  { icon: "fa-swatchbook", label: "Browse templates", desc: "Pick a professional layout", path: "/dashboard/templates" },
+  {
+    icon: "fa-wand-magic-sparkles",
+    label: "Generate with AI",
+    desc: "Create a professional resume instantly using AI.",
+    path: "/dashboard/generate",
+    color: "#2563eb",
+  },
+  {
+    icon: "fa-file-circle-plus",
+    label: "New Resume",
+    desc: "Start building from scratch.",
+    path: "/dashboard/resumes",
+    color: "#10b981",
+  },
+  {
+    icon: "fa-swatchbook",
+    label: "Templates",
+    desc: "Explore premium resume templates.",
+    path: "/dashboard/templates",
+    color: "#8b5cf6",
+  },
 ];
 
 const DashboardOverview = () => {
   const { user } = useContext(authContext);
   const navigate = useNavigate();
+
   const [stats, setStats] = useState(null);
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const headers = { authorization: `Bearer ${token}` };
+
+    const headers = {
+      authorization: `Bearer ${token}`,
+    };
 
     Promise.all([
-      fetch(`${baseUrl}/resumes/stats`, { headers }).then((r) => r.json()),
-      fetch(`${baseUrl}/resumes?limit=3`, { headers }).then((r) => r.json()),
+      fetch(`${baseUrl}/resumes/stats`, {
+        headers,
+      }).then((r) => r.json()),
+
+      fetch(`${baseUrl}/resumes?limit=5`, {
+        headers,
+      }).then((r) => r.json()),
     ])
       .then(([statsData, resumesData]) => {
-        setStats(statsData.data ?? { total: 0, downloads: 0, lastUpdated: null });
+        setStats(
+          statsData.data ?? {
+            total: 0,
+            downloads: 0,
+            lastUpdated: null,
+          }
+        );
+
         setResumes(resumesData.data ?? []);
       })
       .catch(() => {
-        setStats({ total: 0, downloads: 0, lastUpdated: null });
+        setStats({
+          total: 0,
+          downloads: 0,
+          lastUpdated: null,
+        });
+
         setResumes([]);
       })
       .finally(() => setLoading(false));
@@ -47,163 +86,403 @@ const DashboardOverview = () => {
     ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase()
     : "?";
 
-  return (
-    <div style={{ maxWidth: "780px", display: "flex", flexDirection: "column", gap: "2rem", fontFamily: "Inter, system-ui, sans-serif" }}>
+  const statCards = [
+    {
+      icon: "fa-file-lines",
+      label: "Total Resumes",
+      value: stats?.total ?? 0,
+      color: "#2563eb",
+    },
+    {
+      icon: "fa-download",
+      label: "Downloads",
+      value: stats?.downloads ?? 0,
+      color: "#10b981",
+    },
+    {
+      icon: "fa-clock",
+      label: "Last Updated",
+      value: stats?.lastUpdated
+        ? new Date(stats.lastUpdated).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+          })
+        : "Never",
+      color: "#f59e0b",
+    },
+  ];
 
-      {/* Greeting */}
-      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-        <div style={{
-          width: "52px", height: "52px", borderRadius: "50%",
-          background: "#2563eb", color: "#fff",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "18px", fontWeight: 600, flexShrink: 0
-        }}>
-          {initials}
-        </div>
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "2rem",
+      }}
+    >
+      {/* HERO SECTION */}
+
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg,#2563eb 0%,#3b82f6 50%,#60a5fa 100%)",
+          borderRadius: "28px",
+          padding: "2rem",
+          color: "#fff",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "1.5rem",
+          boxShadow: "0 25px 60px rgba(37,99,235,.25)",
+        }}
+      >
         <div>
-          <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#0f172a", margin: "0 0 4px" }}>
-            {getGreeting()}, {user?.firstName ?? "there"} 👋
-          </h1>
-          <p style={{ fontSize: "14px", color: "#64748b", margin: 0 }}>
-            {user?.emailVerified
-              ? "Your account is verified and ready."
-              : "Please verify your email to unlock all features."}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              marginBottom: "1rem",
+            }}
+          >
+            <div
+              style={{
+                width: "64px",
+                height: "64px",
+                borderRadius: "50%",
+                background: "rgba(255,255,255,.2)",
+                backdropFilter: "blur(10px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "700",
+                fontSize: "22px",
+              }}
+            >
+              {initials}
+            </div>
+
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "clamp(1.7rem,3vw,2.4rem)",
+                  fontWeight: 800,
+                }}
+              >
+                {getGreeting()}, {user?.firstName || "there"} 👋
+              </h1>
+
+              <p
+                style={{
+                  margin: "6px 0 0",
+                  opacity: 0.9,
+                  fontSize: "15px",
+                }}
+              >
+                Welcome back to your resume workspace.
+              </p>
+            </div>
+          </div>
+
+          <p
+            style={{
+              maxWidth: "600px",
+              lineHeight: 1.7,
+              margin: 0,
+              opacity: 0.95,
+            }}
+          >
+            Build ATS-friendly resumes, explore premium templates,
+            and use AI to create professional resumes that help you
+            stand out from the competition.
           </p>
         </div>
+
+        <button
+          onClick={() => navigate("/dashboard/generate")}
+          style={{
+            border: "none",
+            background: "#fff",
+            color: "#2563eb",
+            padding: "14px 26px",
+            borderRadius: "14px",
+            fontWeight: 700,
+            fontSize: "15px",
+            cursor: "pointer",
+            boxShadow: "0 10px 25px rgba(0,0,0,.15)",
+          }}
+        >
+          <i
+            className="fa-solid fa-wand-magic-sparkles"
+            style={{ marginRight: "8px" }}
+          ></i>
+          Generate Resume
+        </button>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-        {[
-          { label: "Total resumes", value: stats?.total ?? 0 },
-          { label: "Downloads", value: stats?.downloads ?? 0 },
-          {
-            label: "Last updated",
-            value: stats?.lastUpdated
-              ? new Date(stats.lastUpdated).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
-              : "Never"
-          },
-        ].map((s) => (
-          <div key={s.label} style={{
-            background: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px",
-            padding: "1rem 1.25rem", display: "flex", flexDirection: "column", gap: "6px"
-          }}>
-            <span style={{ fontSize: "12px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {s.label}
-            </span>
-            <span style={{ fontSize: "24px", fontWeight: 700, color: "#0f172a" }}>
-              {loading ? "—" : s.value}
-            </span>
+      {/* STATS */}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit,minmax(220px,1fr))",
+          gap: "1rem",
+        }}
+      >
+        {statCards.map((card) => (
+          <div
+            key={card.label}
+            style={{
+              background: "rgba(255,255,255,.85)",
+              backdropFilter: "blur(14px)",
+              borderRadius: "22px",
+              padding: "1.5rem",
+              border: "1px solid rgba(255,255,255,.7)",
+              boxShadow:
+                "0 15px 40px rgba(15,23,42,.08)",
+            }}
+          >
+            <div
+              style={{
+                width: "52px",
+                height: "52px",
+                borderRadius: "14px",
+                background: `${card.color}15`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "1rem",
+              }}
+            >
+              <i
+                className={`fa-solid ${card.icon}`}
+                style={{
+                  color: card.color,
+                  fontSize: "20px",
+                }}
+              />
+            </div>
+
+            <p
+              style={{
+                color: "#64748b",
+                fontSize: "13px",
+                marginBottom: "8px",
+              }}
+            >
+              {card.label}
+            </p>
+
+            <h2
+              style={{
+                margin: 0,
+                color: "#0f172a",
+                fontSize: "2rem",
+                fontWeight: 800,
+              }}
+            >
+              {loading ? "—" : card.value}
+            </h2>
           </div>
         ))}
       </div>
+            {/* QUICK ACTIONS */}
 
-      {/* Quick actions */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        <h2 style={{ fontSize: "15px", fontWeight: 600, color: "#0f172a", margin: 0 }}>
-          Quick actions
+      <div>
+        <h2
+          style={{
+            marginBottom: "1rem",
+            color: "#0f172a",
+            fontSize: "1.2rem",
+            fontWeight: 700,
+          }}
+        >
+          Quick Actions
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
-          {QUICK_ACTIONS.map((a) => (
-            <button
-              key={a.path}
-              onClick={() => navigate(a.path)}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit,minmax(260px,1fr))",
+            gap: "1rem",
+          }}
+        >
+          {QUICK_ACTIONS.map((item) => (
+            <div
+              key={item.label}
+              onClick={() => navigate(item.path)}
               style={{
-                display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px",
-                padding: "1.125rem", borderRadius: "10px", border: "1px solid #e2e8f0",
-                background: "#fff", cursor: "pointer", textAlign: "left",
-                transition: "box-shadow 0.15s, transform 0.15s"
+                cursor: "pointer",
+                background: "#fff",
+                borderRadius: "22px",
+                padding: "1.5rem",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 10px 30px rgba(15,23,42,.05)",
+                transition: "all .2s ease",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 4px 16px rgba(37,99,235,0.1)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "translateY(0)"; }}
             >
-              <div style={{
-                width: "38px", height: "38px", borderRadius: "8px",
-                background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: "2px"
-              }}>
-                <i className={`fa-solid ${a.icon}`} style={{ fontSize: "16px", color: "#2563eb" }}></i>
+              <div
+                style={{
+                  width: "54px",
+                  height: "54px",
+                  borderRadius: "14px",
+                  background: `${item.color}15`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "1rem",
+                }}
+              >
+                <i
+                  className={`fa-solid ${item.icon}`}
+                  style={{
+                    color: item.color,
+                    fontSize: "22px",
+                  }}
+                />
               </div>
-              <span style={{ fontSize: "14px", fontWeight: 600, color: "#0f172a" }}>{a.label}</span>
-              <span style={{ fontSize: "12px", color: "#94a3b8" }}>{a.desc}</span>
-            </button>
+
+              <h3
+                style={{
+                  margin: "0 0 8px",
+                  color: "#0f172a",
+                }}
+              >
+                {item.label}
+              </h3>
+
+              <p
+                style={{
+                  margin: 0,
+                  color: "#64748b",
+                  fontSize: "14px",
+                  lineHeight: 1.6,
+                }}
+              >
+                {item.desc}
+              </p>
+            </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* Recent resumes */}
-      <section style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ fontSize: "15px", fontWeight: 600, color: "#0f172a", margin: 0 }}>
-            Recent resumes
-          </h2>
-          <button
-            onClick={() => navigate("/dashboard/resumes")}
-            style={{
-              display: "flex", alignItems: "center", gap: "4px",
-              fontSize: "13px", color: "#2563eb", background: "none",
-              border: "none", cursor: "pointer", padding: 0
-            }}
-          >
-            View all <i className="fa-solid fa-arrow-right" style={{ fontSize: "11px" }}></i>
-          </button>
-        </div>
+      {/* RECENT RESUMES */}
 
-        {loading ? (
-          <p style={{ fontSize: "14px", color: "#94a3b8" }}>Loading…</p>
-        ) : resumes.length === 0 ? (
-          <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center", gap: "12px",
-            padding: "2.5rem", background: "#fff", border: "1px solid #e2e8f0",
-            borderRadius: "10px", textAlign: "center", color: "#94a3b8", fontSize: "14px"
-          }}>
-            <i className="fa-regular fa-file" style={{ fontSize: "32px", color: "#cbd5e1" }}></i>
-            <p style={{ margin: 0 }}>No resumes yet. Create your first one!</p>
-            <button
-              onClick={() => navigate("/dashboard/generate")}
+      <div>
+        <h2
+          style={{
+            marginBottom: "1rem",
+            color: "#0f172a",
+            fontSize: "1.2rem",
+            fontWeight: 700,
+          }}
+        >
+          Recent Resumes
+        </h2>
+
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: "24px",
+            border: "1px solid #e2e8f0",
+            overflow: "hidden",
+          }}
+        >
+          {loading ? (
+            <div
               style={{
-                background: "#2563eb", color: "#fff", border: "none",
-                borderRadius: "8px", padding: "8px 20px", fontSize: "14px", cursor: "pointer"
+                padding: "2rem",
+                textAlign: "center",
+                color: "#64748b",
               }}
             >
-              Generate with AI
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-            {resumes.map((r) => (
-              <div key={r._id} style={{
-                display: "flex", alignItems: "center", gap: "12px",
-                padding: "0.75rem 1rem", background: "#fff",
-                border: "1px solid #e2e8f0", borderRadius: "8px"
-              }}>
-                <i className="fa-solid fa-file-lines" style={{ fontSize: "18px", color: "#2563eb", flexShrink: 0 }}></i>
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
-                  <span style={{
-                    fontSize: "14px", fontWeight: 500, color: "#0f172a",
-                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
-                  }}>
-                    {r.title || "Untitled Resume"}
-                  </span>
-                  <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                    Updated {new Date(r.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+              Loading...
+            </div>
+          ) : resumes.length === 0 ? (
+            <div
+              style={{
+                padding: "3rem",
+                textAlign: "center",
+              }}
+            >
+              <i
+                className="fa-regular fa-file-lines"
+                style={{
+                  fontSize: "42px",
+                  color: "#cbd5e1",
+                }}
+              />
+
+              <p
+                style={{
+                  color: "#64748b",
+                  marginTop: "1rem",
+                }}
+              >
+                No resumes found.
+              </p>
+            </div>
+          ) : (
+            resumes.map((resume) => (
+              <div
+                key={resume._id}
+                style={{
+                  padding: "1rem 1.5rem",
+                  borderBottom: "1px solid #f1f5f9",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <h4
+                    style={{
+                      margin: 0,
+                      color: "#0f172a",
+                    }}
+                  >
+                    {resume.title || "Untitled Resume"}
+                  </h4>
+
+                  <span
+                    style={{
+                      color: "#64748b",
+                      fontSize: "13px",
+                    }}
+                  >
+                    Updated{" "}
+                    {new Date(
+                      resume.updatedAt
+                    ).toLocaleDateString()}
                   </span>
                 </div>
+
                 <button
-                  onClick={() => navigate(`/dashboard/resumes/${r._id}`)}
-                  aria-label="Edit resume"
+                  onClick={() =>
+                    navigate(
+                      `/dashboard/resumes/${resume._id}`
+                    )
+                  }
                   style={{
-                    background: "none", border: "1px solid #e2e8f0", borderRadius: "6px",
-                    padding: "6px 10px", cursor: "pointer", color: "#64748b", fontSize: "14px"
+                    border: "none",
+                    background: "#eff6ff",
+                    color: "#2563eb",
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    cursor: "pointer",
                   }}
                 >
-                  <i className="fa-solid fa-pen"></i>
+                  Open
                 </button>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 };

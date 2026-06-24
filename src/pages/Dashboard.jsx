@@ -1,17 +1,42 @@
 import React, { useContext, useState } from "react";
 import { authContext } from "../contexts/AuthContexts";
-import { useNavigate, Link, Outlet, useLocation } from "react-router-dom";
+import {
+  useNavigate,
+  Link,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
 import { toast } from "sonner";
 
 const NAV_ITEMS = [
-  { label: "Overview", icon: "fa-table-cells-large", path: "/dashboard" },
-  { label: "My Resumes", icon: "fa-file-lines", path: "/dashboard/resumes" },
-  { label: "Generate with AI", icon: "fa-wand-magic-sparkles", path: "/dashboard/generate" },
-  { label: "Templates", icon: "fa-swatchbook", path: "/dashboard/templates" },
-  { label: "Account", icon: "fa-circle-user", path: "/dashboard/account" },
+  {
+    label: "Overview",
+    icon: "fa-table-cells-large",
+    path: "/dashboard",
+  },
+  {
+    label: "My Resumes",
+    icon: "fa-file-lines",
+    path: "/dashboard/resumes",
+  },
+  {
+    label: "Generate with AI",
+    icon: "fa-wand-magic-sparkles",
+    path: "/dashboard/generate",
+  },
+  {
+    label: "Templates",
+    icon: "fa-swatchbook",
+    path: "/dashboard/templates",
+  },
+  {
+    label: "Account",
+    icon: "fa-circle-user",
+    path: "/dashboard/account",
+  },
 ];
 
-const DashboardLayout = () => {
+export default function DashboardLayout() {
   const { user, logout } = useContext(authContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,159 +44,391 @@ const DashboardLayout = () => {
 
   const handleLogout = () => {
     logout();
-    toast.success("Logged out");
+    toast.success("Logged out successfully");
     navigate("/login");
   };
 
   const initials = user
-    ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase()
-    : "?";
+    ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase()
+    : "U";
 
   return (
-    <div style={{
-      display: "flex",
-      minHeight: "100vh",
-      background: "#f8fafc",
-      fontFamily: "Inter, system-ui, sans-serif"
-    }}>
-      {/* Mobile overlay */}
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        background:
+          "linear-gradient(135deg,#f8fafc 0%,#eef4ff 50%,#f8fafc 100%)",
+        fontFamily: "Inter, system-ui, sans-serif",
+      }}
+    >
+      {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
+          className="mobile-overlay"
           onClick={() => setSidebarOpen(false)}
-          style={{
-            display: "none",
-            position: "fixed", inset: 0,
-            background: "rgba(15,23,42,0.45)", zIndex: 40
-          }}
-          className="db-overlay"
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`db-sidebar ${sidebarOpen ? "open" : ""}`}
+        className={`sidebar ${sidebarOpen ? "open" : ""}`}
         style={{
-          width: "240px",
+          width: "280px",
           minHeight: "100vh",
-          background: "#1e3a8a",
+          background: "rgba(15,23,42,0.88)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderRight: "1px solid rgba(255,255,255,0.08)",
           display: "flex",
           flexDirection: "column",
-          padding: "1.5rem 0",
+          padding: "1.5rem",
           position: "sticky",
           top: 0,
-          flexShrink: 0
+          overflowY: "auto",
+          zIndex: 50,
         }}
       >
-        <div style={{
-          display: "flex", alignItems: "center", gap: "10px",
-          padding: "0 1.25rem 1.5rem", color: "#fff",
-          fontSize: "15px", fontWeight: 600,
-          borderBottom: "1px solid rgba(255,255,255,0.12)",
-          marginBottom: "1rem"
-        }}>
-          <i className="fa-solid fa-file-shield" style={{ fontSize: "20px", color: "#93c5fd" }}></i>
-          <span>ProFile ElevateAI</span>
-        </div>
-
-        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "2px", padding: "0 0.75rem" }}>
-          {NAV_ITEMS.map((item) => {
-            const active = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                style={{
-                  display: "flex", alignItems: "center", gap: "10px",
-                  padding: "0.625rem 0.875rem", borderRadius: "8px",
-                  color: active ? "#fff" : "rgba(255,255,255,0.65)",
-                  background: active ? "rgba(255,255,255,0.15)" : "transparent",
-                  fontSize: "14px", textDecoration: "none",
-                  transition: "background 0.15s, color 0.15s"
-                }}
-              >
-                <i className={`fa-solid ${item.icon}`} style={{ fontSize: "16px", width: "18px" }}></i>
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <button
-          onClick={handleLogout}
+        {/* Logo */}
+        <Link
+          to="/dashboard"
           style={{
-            display: "flex", alignItems: "center", gap: "10px",
-            margin: "0 0.75rem", padding: "0.625rem 0.875rem",
-            borderRadius: "8px", background: "transparent", border: "none",
-            color: "rgba(255,255,255,0.55)", fontSize: "14px",
-            cursor: "pointer", width: "calc(100% - 1.5rem)"
+            textDecoration: "none",
+            marginBottom: "2rem",
           }}
         >
-          <i className="fa-solid fa-arrow-right-from-bracket" style={{ fontSize: "16px", width: "18px" }}></i>
-          <span>Log out</span>
-        </button>
-      </aside>
-
-      {/* Main */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-        {/* Top bar */}
-        <header style={{
-          height: "56px", background: "#fff",
-          borderBottom: "1px solid #e2e8f0",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 1.5rem", position: "sticky", top: 0, zIndex: 10
-        }}>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="db-menu-btn"
-            aria-label="Toggle menu"
+          <div
             style={{
-              display: "none", background: "none", border: "none",
-              fontSize: "20px", cursor: "pointer", color: "#374151", padding: "4px"
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
             }}
           >
-            <i className="fa-solid fa-bars"></i>
-          </button>
-
-          <div style={{ marginLeft: "auto" }}>
             <div
-              title={user?.firstName}
               style={{
-                width: "34px", height: "34px", borderRadius: "50%",
-                background: "#2563eb", color: "#fff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "13px", fontWeight: 600, cursor: "pointer"
+                width: "48px",
+                height: "48px",
+                borderRadius: "14px",
+                background:
+                  "linear-gradient(135deg,#2563eb,#60a5fa)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow:
+                  "0 10px 30px rgba(37,99,235,.35)",
+              }}
+            >
+            </div>
+
+            <div>
+              <h3
+                style={{
+                  color: "#fff",
+                  margin: 0,
+                  fontSize: "17px",
+                  fontWeight: 700,
+                }}
+              >
+                ProFile
+              </h3>
+              <p
+                style={{
+                  margin: 0,
+                  color: "#94a3b8",
+                  fontSize: "12px",
+                }}
+              >
+                ElevateAI
+              </p>
+            </div>
+          </div>
+        </Link>
+
+        {/* User Card */}
+        <div
+          style={{
+            background:
+              "linear-gradient(135deg,rgba(37,99,235,.25),rgba(59,130,246,.08))",
+            border: "1px solid rgba(255,255,255,.08)",
+            borderRadius: "20px",
+            padding: "1rem",
+            marginBottom: "2rem",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            <div
+              style={{
+                width: "54px",
+                height: "54px",
+                borderRadius: "50%",
+                background:
+                  "linear-gradient(135deg,#2563eb,#60a5fa)",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+                fontSize: "18px",
               }}
             >
               {initials}
             </div>
+
+            <div>
+              <h4
+                style={{
+                  color: "#fff",
+                  margin: 0,
+                  fontSize: "15px",
+                }}
+              >
+                {user?.firstName} {user?.lastName}
+              </h4>
+
+              <p
+                style={{
+                  margin: "4px 0 0",
+                  color: "#94a3b8",
+                  fontSize: "12px",
+                }}
+              >
+                {user?.email}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div style={{ flex: 1 }}>
+          <p
+            style={{
+              color: "#64748b",
+              fontSize: "11px",
+              fontWeight: 700,
+              letterSpacing: "1px",
+              textTransform: "uppercase",
+              marginBottom: "1rem",
+            }}
+          >
+            Navigation
+          </p>
+
+          <nav
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+            }}
+          >
+            {NAV_ITEMS.map((item) => {
+              const active =
+                location.pathname === item.path;
+
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setSidebarOpen(false)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "14px",
+                    padding: "14px 16px",
+                    borderRadius: "14px",
+                    textDecoration: "none",
+                    background: active
+                      ? "linear-gradient(135deg,#2563eb,#3b82f6)"
+                      : "transparent",
+                    color: active
+                      ? "#fff"
+                      : "#cbd5e1",
+                    fontWeight: active ? 600 : 500,
+                    transition: "all .25s ease",
+                    boxShadow: active
+                      ? "0 10px 25px rgba(37,99,235,.3)"
+                      : "none",
+                  }}
+                >
+                  <i
+                    className={`fa-solid ${item.icon}`}
+                    style={{
+                      width: "18px",
+                      textAlign: "center",
+                    }}
+                  />
+
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          style={{
+            marginTop: "2rem",
+            border: "none",
+            cursor: "pointer",
+            padding: "14px",
+            borderRadius: "14px",
+            background: "rgba(239,68,68,.12)",
+            color: "#f87171",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "10px",
+            fontWeight: 600,
+          }}
+        >
+          <i className="fa-solid fa-arrow-right-from-bracket" />
+          Logout
+        </button>
+      </aside>
+
+      {/* Main Content */}
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+        }}
+      >
+        {/* Header */}
+        <header
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 20,
+            background: "rgba(255,255,255,.75)",
+            backdropFilter: "blur(16px)",
+            borderBottom: "1px solid #e2e8f0",
+            padding: "1rem 2rem",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "1rem",
+            }}
+          >
+            {/* Mobile Menu */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="menu-btn"
+              aria-label="Open Menu"
+              style={{
+                display: "none",
+                width: "42px",
+                height: "42px",
+                borderRadius: "12px",
+                border: "1px solid #e2e8f0",
+                background: "#fff",
+                cursor: "pointer",
+                fontSize: "22px",
+                color: "#0f172a",
+              }}
+             >
+                ☰
+            </button>
+
+            {/* Actions */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                marginLeft: "auto",
+              }}
+            >
+
+              <div
+                style={{
+                  width: "42px",
+                  height: "42px",
+                  borderRadius: "50%",
+                  background:
+                    "linear-gradient(135deg,#2563eb,#60a5fa)",
+                  color: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                }}
+              >
+                {initials}
+              </div>
+            </div>
           </div>
         </header>
 
-        {/* Page content */}
-        <main style={{ padding: "2rem 2rem 3rem", flex: 1 }}>
+        {/* Content */}
+        <main
+          style={{
+            flex: 1,
+            padding: "2rem",
+          }}
+        >
           <Outlet />
         </main>
       </div>
 
       <style>{`
-        @media (max-width: 768px) {
-          .db-sidebar {
+        .sidebar::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,.12);
+          border-radius: 20px;
+        }
+
+        @media (max-width: 900px) {
+          .sidebar {
             position: fixed !important;
-            top: 0; left: 0; height: 100%;
-            z-index: 50;
+            left: 0;
+            top: 0;
             transform: translateX(-100%);
-            transition: transform 0.25s ease;
+            transition: transform .3s ease;
           }
-          .db-sidebar.open {
+
+          .sidebar.open {
             transform: translateX(0);
           }
-          .db-overlay { display: block !important; }
-          .db-menu-btn { display: flex !important; align-items: center; }
+
+          .menu-btn {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .mobile-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,.55);
+            z-index: 40;
+          }
+        }
+        
+        @media (max-width: 640px) {
+          main {
+            padding: 1rem !important;
+          }
+
+          header {
+            padding: 1rem !important;
+          }
         }
       `}</style>
     </div>
   );
-};
-
-export default DashboardLayout;
+}
